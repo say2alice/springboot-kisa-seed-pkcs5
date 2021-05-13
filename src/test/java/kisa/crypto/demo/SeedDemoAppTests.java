@@ -27,10 +27,10 @@ class SeedDemoAppTests {
     private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
     private final byte[] userKey = "EcSXmC9Uz3Q9/a2EdC9Xtg==".getBytes();
-    private final byte[] decryptKey = Base64.getDecoder().decode("EcSXmC9Uz3Q9/a2EdC9Xtg==");
+    private final byte[] decodedKey = Base64.getDecoder().decode("EcSXmC9Uz3Q9/a2EdC9Xtg==");
     private final byte[] initVec = "CASINICASTEST000".getBytes();
 
-    private final SecretKeySpec secKey = new SecretKeySpec(decryptKey, "SEED");
+    private final SecretKeySpec secKey = new SecretKeySpec(decodedKey, "SEED");
     private final IvParameterSpec ivSpec = new IvParameterSpec(initVec);
 
     @Test
@@ -49,7 +49,7 @@ class SeedDemoAppTests {
             Cipher cipher = Cipher.getInstance("SEED/CBC/PKCS5Padding", provider);
 
             String srcString = "이상하군..";
-            String encString = seedEncrypt(cipher, srcString);
+            String encString = seedEncrypt(cipher, srcString, "utf-8");
 
             log.debug("seed enc => {}", encString);
             log.debug("seed dec => {}\n", seedDecrypt(cipher, encString, "utf-8"));
@@ -87,15 +87,17 @@ class SeedDemoAppTests {
         );
     }
 
-    private String seedEncrypt(Cipher cipher, String srcString) throws InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        byte[] decryptedMessage = new byte[0];
+    private String seedEncrypt(Cipher cipher, String srcString, String characterSet)
+            throws InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, UnsupportedEncodingException {
+        byte[] decryptedMessage;
         cipher.init(Cipher.ENCRYPT_MODE, secKey, ivSpec);
-        decryptedMessage = cipher.doFinal(srcString.getBytes(UTF_8));
+        decryptedMessage = cipher.doFinal(srcString.getBytes(characterSet));
 
         return Base64.getEncoder().encodeToString(decryptedMessage);
     }
 
-    private String seedDecrypt(Cipher cipher, String encString, String characterSet) throws InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, UnsupportedEncodingException {
+    private String seedDecrypt(Cipher cipher, String encString, String characterSet)
+            throws InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, UnsupportedEncodingException {
         byte[] decodedEncryptedMessage = Base64.getDecoder().decode(encString);
         cipher.init(Cipher.DECRYPT_MODE, secKey, ivSpec);
 
